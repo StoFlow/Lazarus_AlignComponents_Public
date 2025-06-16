@@ -22,9 +22,7 @@
       </CodeGeneration>
     </CompilerOptions>
     <Description Value="Alignment of components resp. controls in form designer of Lazarus IDE."/>
-    <License Value="Regarding the package the license is LGPL 3.0..
-For FPC/Lazarus see https://wiki.lazarus.freepascal.org/licensing.
-"/>
+    <License Value="V 1.0 see license.md"/>
     <Version Minor="3"/>
     <Files Count="1">
       <Item1>
