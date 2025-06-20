@@ -22,8 +22,8 @@
       </CodeGeneration>
     </CompilerOptions>
     <Description Value="Alignment of components resp. controls in form designer of Lazarus IDE."/>
-    <License Value="V 1.0 see license.md"/>
-    <Version Minor="3"/>
+    <License Value="see LICENSE.md"/>
+    <Version Minor="4"/>
     <Files Count="1">
       <Item1>
         <Filename Value="alignComponentsImpl.pas"/>
