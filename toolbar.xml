@@ -1,0 +1,23 @@
+        <ToolBar3 Version="1" Count="20">
+          <Break Value="True"/>
+          <Button1 Name="align_left"/>
+          <Button2 Name="align_right"/>
+          <Button3 Name="align_top"/>
+          <Button4 Name="align_bottom"/>
+          <Button5 Name="---------------"/>
+          <Button6 Name="align_leftmost"/>
+          <Button7 Name="align_rightmost"/>
+          <Button8 Name="align_topmost"/>
+          <Button9 Name="align_bottommost"/>
+          <Button10 Name="---------------"/>
+          <Button11 Name="align_height"/>
+          <Button12 Name="align_width"/>
+          <Button13 Name="---------------"/>
+          <Button14 Name="align_highest"/>
+          <Button15 Name="align_lowest"/>
+          <Button16 Name="align_widest"/>
+          <Button17 Name="align_smallest"/>
+          <Button18 Name="---------------"/>
+          <Button19 Name="distribute_horizontally_evenly"/>
+          <Button20 Name="distribute_vertically_evenly"/>
+        </ToolBar3>
