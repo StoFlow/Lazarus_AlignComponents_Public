@@ -1,4 +1,4 @@
-        <ToolBar3 Version="1" Count="20">
+        <ToolBar3 Version="1" Count="17">
           <Break Value="True"/>
           <Button1 Name="align_left"/>
           <Button2 Name="align_right"/>
@@ -17,7 +17,9 @@
           <Button15 Name="align_lowest"/>
           <Button16 Name="align_widest"/>
           <Button17 Name="align_smallest"/>
-          <Button18 Name="---------------"/>
-          <Button19 Name="distribute_horizontally_evenly"/>
-          <Button20 Name="distribute_vertically_evenly"/>
         </ToolBar3>
+        <ToolBar4 Version="1" Count="2">
+          <Break Value="True"/>
+          <Button1 Name="distribute_horizontally_evenly"/>
+          <Button2 Name="distribute_vertically_evenly"/>
+        </ToolBar4>

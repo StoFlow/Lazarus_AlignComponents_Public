@@ -8,6 +8,7 @@
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
+        <OtherUnitFiles Value="$(LazarusDir)/designer"/>
         <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
@@ -23,7 +24,7 @@
     </CompilerOptions>
     <Description Value="Alignment of components resp. controls in form designer of Lazarus IDE."/>
     <License Value="see LICENSE.md"/>
-    <Version Minor="4"/>
+    <Version Minor="4" Release="2"/>
     <Files Count="1">
       <Item1>
         <Filename Value="alignComponentsImpl.pas"/>

@@ -28,6 +28,7 @@ Uses
           ToolBarIntf,
           FormEditingIntf,
           propedits,
+          componenteditors,
           lcltype;
 
           {$R alignComponents_images.res}
@@ -57,8 +58,16 @@ Const
           SALIGN_SZE_SST                    = 'align_smallest';
 
           // distribution
+          // min 3 sel ctrls
           SDSTRB_HOR_EVN                    = 'distribute_horizontally_evenly';
           SDSTRB_VER_EVN                    = 'distribute_vertically_evenly';
+
+          //// min 2 sel ctrls
+          //SDSTRB_HOR_MRE                    = 'distribute_horizontally_more';
+          //SDSTRB_HOR_LSS                    = 'distribute_horizontally_less';
+          //
+          //SDSTRB_VER_MRE                    = 'distribute_vertically_more';
+          //SDSTRB_VER_LSS                    = 'distribute_vertically_less';
 
 Resourcestring
 
@@ -213,8 +222,13 @@ Type
 
           Public
 
+             Function                       registerControlUndoActions( aControl: tControl; aOldBounds: tRect): boolEan;
+
+             Procedure                      setControlBounds( aControl: tControl);
+
              Function                       setLeft( aNewLeft: intEger): intEger;
              Function                       setTop ( aNewTop : intEger): intEger;
+
              Function                       toString(): String;
 
           End;
@@ -246,7 +260,7 @@ Type
              Function                       checkCompSelection(): boolEan;
              Function                       checkCompSelectionAndIndex( aInTemplIdx: intEger; Out aOutTemplIdx: intEger): boolEan;
 
-             Function                       getldxOfCompWthSpecDimValue( aCompDim: tCompDim; aSpec: tHgtWthMinOrMax): intEger;
+             Function                       getIdxOfCompWthSpecDimValue( aCompDim: tCompDim; aSpec: tHgtWthMinOrMax): intEger;
 
              Function                       checkCtrlSelection( aMinCnt: intEger= 2): boolEan;
              Function                       checkCtrlSelectionAndIndex( aInTemplIdx: intEger; Out aOutTemplIdx: intEger): boolEan;
@@ -262,7 +276,7 @@ Type
 
              Function                       ctrlDimHlperCheckOne( aCtrlIdx: intEger; aSpec: tHgtWthMinOrMax; aCheckValue: intEGer; Var aVarResIdx: intEger; Var aVarMostVal: intEger): boolEan;
              Procedure                      ctrlDimHlper( aCtrlIdx: intEger; aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax; Var aVarResIdx: intEger; Var aVarMostVal: intEger);
-             Function                       getldxOfCtrlWthSpecDimValue( aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax= hwNone): intEger;
+             Function                       getIdxOfCtrlWthSpecDimValue( aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax= hwNone): intEger;
 
              Procedure                      alignRightMost( aSender: tObject);
              Procedure                      alignBottomMost( aSender: tObject);
@@ -286,7 +300,9 @@ Type
 
              Procedure                      ControlBoundsCallback( Var aData: tControlBoundsCBData);
 
+             Procedure                      preventStalemateHoriz ( aCtrlBdAr: tControlBoundArray; Var aVarIdxFst: intEger; Var aVarIdxLst: intEger);
              Function                       distEvenCalcHoriz( aCtrlBdAr: tControlBoundArray; Out aOutIdxFst: intEger; Out aOutIdxLst: intEger; Out aOutStrtLimit: intEger; Out aOutLastLimit: intEger): tControlBoundsCBData;
+             Procedure                      preventStalematevertic( aCtrlBdAr: tControlBoundArray; Var aVarIdxFst: intEger; Var aVarIdxLst: intEger);
              Function                       distEvenCalcVertic( aCtrlBdAr: tControlBoundArray; Out aOutIdxFst: intEger; Out aOutIdxLst: intEger; Out aOutStrtLimit: intEger; Out aOutLastLimit: intEger): tControlBoundsCBData;
 
              Function                       distEvenCalc( aDirection: tDirection; Var aVarCtrlBdAr: tControlBoundArray; Out aOutStrtLimit: intEger; Out aOutDistance: intEger): boolEan;
@@ -331,6 +347,49 @@ Procedure
 Begin
 
 End;
+
+Function
+          signalModified( aPstntt: tPersistent; Out aOutDesigner: tIDesigner): boolEan; Overload;
+Begin
+          Result:= False;
+          aOutDesigner:= Nil;
+
+          aOutDesigner:= findRootDesigner( aPstntt);
+          If assigned( aOutDesigner)
+             Then
+             Begin
+                  aOutDesigner.Modified;
+                  Result:= True;
+          End;
+End;
+Function
+          signalModified( aPstntt: tPersistent): boolEan; Overload;
+Var
+          vtiDsgnr                          : tIDesigner;
+Begin
+          Result:= signalModified( aPstntt, vtiDsgnr);
+End;
+
+Function
+          signalModAndAddUndoAction( aPstntt: tPersistent; aFieldName: String; Const aOldVal: Variant; Const aNewVal: Variant): boolEan;
+Var
+          viDesigner                        : tIDesigner;
+          CompEditDsg                       : tComponentEditorDesigner;
+Begin
+          Result:= False;
+          If Not signalModified( aPstntt, viDesigner)
+             Then
+             Exit;
+
+          If ( viDesigner Is tComponentEditorDesigner)
+             Then
+             Begin
+                  CompEditDsg:= tComponentEditorDesigner( viDesigner);
+                  Result:= CompEditDsg.AddUndoAction( aPstntt, uopChange, True, aFieldName, aOldVal, aNewVal);
+          End;
+End;
+
+
           {$hints on}
 
 Function
@@ -388,7 +447,7 @@ Begin
           imcCmd_DSV_EVN:= registerOneCmd( SDSTRB_VER_EVN, SDSTRB_VEV_IDEMenuCaption    , @ho_Obj.distrVerEvn);
 
           GlobalDesignHook.AddHandlerSetSelection( @ho_Obj.PropHookSetSelection);
-
+          //GetPropertyEditorHook();
 End;
 
 
@@ -659,11 +718,53 @@ End;
 
           { tHRect }
 
+
 Function
-          tHRect.toString(): String;
+          tHRect.registerControlUndoActions( aControl: tControl; aOldBounds: tRect): boolEan;
+Var
+          vtReOld                           : tRect;
+          vtReNew                           : tRect;
 Begin
-          Result:= 'Left= %d, Top= = %d, Width= %d, Height= %d';
-          Result:= format( Result, [ Self.Left, Self.Top, Self.Width, Self.Height]);
+          Result:= False;
+          If Not assigned( aControl)
+             Then
+             Exit;
+
+          vtReOld:= aOldBounds;
+          vtReNew:= aControl.BoundsRect;
+          {$notes off}
+          If ( vtReOld.Left  <> vtReNew.Left  )
+             Then
+             signalModAndAddUndoAction( aControl, 'Left'  , vtReOld.Left  , vtReNew.Left  );
+
+          If ( vtReOld.Top   <> vtReNew.Top   )
+             Then
+             signalModAndAddUndoAction( aControl, 'Top'   , vtReOld.Top   , vtReNew.Top   );
+
+          If ( vtReOld.Height<> vtReNew.Height)
+             Then
+             signalModAndAddUndoAction( aControl, 'Height', vtReOld.Height, vtReNew.Height);
+
+          If ( vtReOld.Width <> vtReNew.Width )
+             Then
+             signalModAndAddUndoAction( aControl, 'Width' , vtReOld.Width , vtReNew.Width );
+
+          {$notes on}
+End;
+
+Procedure
+          tHRect.setControlBounds( aControl: tControl);
+Var
+          vtReOld                           : tRect;
+Begin
+          If Not assigned( aControl)
+             Then
+             Exit;
+
+          vtReOld:= aControl.BoundsRect;
+          aControl.SetBounds( Self.Left, Self.Top, Self.Width, Self.Height);
+          registerControlUndoActions( aControl, vtReOld);
+
 End;
 
 Function  // sets left, returns right
@@ -688,6 +789,13 @@ Begin
           Self.Bottom:= ( Self.Top+ vInOldDim);
 
           Result:= Self.Bottom;
+End;
+
+Function
+          tHRect.toString(): String;
+Begin
+          Result:= 'Left= %d, Top= %d, Width= %d, Height= %d';
+          Result:= format( Result, [ Self.Left, Self.Top, Self.Width, Self.Height]);
 End;
 
 
@@ -855,6 +963,7 @@ Begin
                 Then
                 tControl( GlobalDesignHook.LookupRoot).rePaint()
           Except End;
+
 End;
 
 Function
@@ -895,7 +1004,7 @@ End;
 
 
 Function
-          tHelpObj.getldxOfCompWthSpecDimValue( aCompDim: tCompDim; aSpec: tHgtWthMinOrMax): intEger;
+          tHelpObj.getIdxOfCompWthSpecDimValue( aCompDim: tCompDim; aSpec: tHgtWthMinOrMax): intEger;
 Var
           vInMost                           : intEger;
           vInLftC                           : intEger;
@@ -971,12 +1080,30 @@ Begin
                          Then
                          Begin
                               GetComponentLeftTopOrDesignInfo( tComponent( pslCurSelComps[ vIn1]), vInLftC, vInTopC);
-
-                              If ( aCompDim= cpdLeft)
+                              If ( aCompDim= cpdLeft) And ( vInLftC<> vInLft)
                                  Then
-                                 SetComponentLeftTopOrDesignInfo( tComponent( pslCurSelComps[ vIn1]), vInLft, vInTopC)
+                                 Begin
+                                      SetComponentLeftTopOrDesignInfo( tComponent( pslCurSelComps[ vIn1]), vInLft, vInTopC);
+                                      {$notes off}
+                                      If ( pslCurSelComps[ vIn1] Is tControl)
+                                         Then
+                                         signalModAndAddUndoAction( pslCurSelComps[ vIn1], 'Left', vInLftC, vInLft)
+                                      Else
+                                         signalModified( pslCurSelComps[ vIn1])
+                                      {$notes on}
+
+                                 End
                               Else
-                                 SetComponentLeftTopOrDesignInfo( tComponent( pslCurSelComps[ vIn1]), vInLftC, vInTop)
+                                 Begin
+                                      SetComponentLeftTopOrDesignInfo( tComponent( pslCurSelComps[ vIn1]), vInLftC, vInTop);
+                                      {$notes off}
+                                      If ( pslCurSelComps[ vIn1] Is tControl)
+                                         Then
+                                         signalModAndAddUndoAction( pslCurSelComps[ vIn1], 'Top' , vInTopC, vInTop )
+                                      Else
+                                         signalModified( pslCurSelComps[ vIn1])
+                                      {$notes on}
+                              End;
                       End;
              End;
              tryRefreshLUR();
@@ -1005,7 +1132,7 @@ Var
           vInTmplIdx                        : intEger;
 Begin
           nOp( aSender);
-          vInTmplIdx:= getldxOfCompWthSpecDimValue( cpdLeft, hwMin);
+          vInTmplIdx:= getIdxOfCompWthSpecDimValue( cpdLeft, hwMin);
 
           If ( -1< vInTmplIdx)
              Then
@@ -1019,7 +1146,7 @@ Var
 Begin
           nOp( aSender);
 
-          vInTmplIdx:= getldxOfCompWthSpecDimValue( cpdTop, hwMin);
+          vInTmplIdx:= getIdxOfCompWthSpecDimValue( cpdTop, hwMin);
 
           If ( -1< vInTmplIdx)
              Then
@@ -1109,7 +1236,8 @@ Begin
                                               vtReCi.Bottom:= vtReCt.Bottom;
                                               vtReCi.Top   := vtReCi.Top+ vInDiff;
                                       End;
-                                      tControl( pslCurSelCtrls[ vIn1]).SetBounds( vtReCi.Left, vtReCi.Top, vtReCi.Width, vtReCi.Height);
+                                      vtReCi.setControlBounds( tControl( pslCurSelCtrls[ vIn1]));
+                                      //tControl( pslCurSelCtrls[ vIn1]).SetBounds( vtReCi.Left, vtReCi.Top, vtReCi.Width, vtReCi.Height);
                               End;
                       End;
              End;
@@ -1160,7 +1288,7 @@ Begin
 End;
 
 Function
-          tHelpObj.getldxOfCtrlWthSpecDimValue( aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax= hwNone): intEger;
+          tHelpObj.getIdxOfCtrlWthSpecDimValue( aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax= hwNone): intEger;
 Var
           vInMost                           : intEger;
           vIn1                              : intEger;
@@ -1198,7 +1326,7 @@ Begin
 
           If ( hwNone<> aSpec)
              Then
-             vInTmplIdx:= getldxOfCtrlWthSpecDimValue( aCtlDim, aSpec)
+             vInTmplIdx:= getIdxOfCtrlWthSpecDimValue( aCtlDim, aSpec)
           Else
              vInTmplIdx:= 0;
 
@@ -1273,7 +1401,8 @@ Begin
                                       vtReCi.Width  := vtReCt.Width;
 
                               End;
-                              tControl( pslCurSelCtrls[ vIn1]).SetBounds( vtReCi.Left, vtReCi.Top, vtReCi.Width, vtReCi.Height);
+                              vtReCi.setControlBounds( tControl( pslCurSelCtrls[ vIn1]));
+                              //tControl( pslCurSelCtrls[ vIn1]).SetBounds( vtReCi.Left, vtReCi.Top, vtReCi.Width, vtReCi.Height);
                       End;
              End;
              tryRefreshLUR();
@@ -1303,7 +1432,7 @@ Var
 Begin
           nOp( aSender);
 
-          vInTmplIdx:= getldxOfCtrlWthSpecDimValue( aCtlDim, aSpec);
+          vInTmplIdx:= getIdxOfCtrlWthSpecDimValue( aCtlDim, aSpec);
 
           If ( -1< vInTmplIdx)
              Then
@@ -1427,11 +1556,31 @@ Begin
 
 End;
 
+
+Procedure
+          tHelpObj.preventStalemateHoriz( aCtrlBdAr: tControlBoundArray; Var aVarIdxFst: intEger; Var aVarIdxLst: intEger);
+Begin
+          If ( aVarIdxFst= aVarIdxLst)
+             Then
+             Exit;
+
+          If     ( aCtrlBdAr[ aVarIdxFst].Bounds.Right= aCtrlBdAr[ aVarIdxLst].Bounds.Right)
+             Then
+             aVarIdxLst:= aVarIdxFst
+          Else
+             If ( aCtrlBdAr[ aVarIdxLst].Bounds.Left  = aCtrlBdAr[ aVarIdxFst].Bounds.Left )
+                Then
+                aVarIdxFst:= aVarIdxLst;
+
+End;
+
 Function
           tHelpObj.distEvenCalcHoriz( aCtrlBdAr: tControlBoundArray; Out aOutIdxFst: intEger; Out aOutIdxLst: intEger; Out aOutStrtLimit: intEger; Out aOutLastLimit: intEger): tControlBoundsCBData;
 Begin
-          aOutIdxFst   := getldxOfCtrlWthSpecDimValue( ctdLeft  , hwMin);  // right  x of the control that has left   most
-          aOutIdxLst   := getldxOfCtrlWthSpecDimValue( ctdRight , hwMax);  // left   x of the control that has right  most
+          aOutIdxFst   := getIdxOfCtrlWthSpecDimValue( ctdLeft  , hwMin);  // right  x of the control that has left   most
+          aOutIdxLst   := getIdxOfCtrlWthSpecDimValue( ctdRight , hwMax);  // left   x of the control that has right  most
+
+          preventStalemateHoriz( aCtrlBdAr, aOutIdxFst, aOutIdxLst);
 
           aOutStrtLimit:= aCtrlBdAr[ aOutIdxFst].Bounds.Right;
           aOutLastLimit:= aCtrlBdAr[ aOutIdxLst].Bounds.Left;
@@ -1440,11 +1589,30 @@ Begin
 
 End;
 
+Procedure
+          tHelpObj.preventStalemateVertic( aCtrlBdAr: tControlBoundArray; Var aVarIdxFst: intEger; Var aVarIdxLst: intEger);
+Begin
+          If ( aVarIdxFst= aVarIdxLst)
+             Then
+             Exit;
+
+          If    ( aCtrlBdAr[ aVarIdxFst].Bounds.Bottom= aCtrlBdAr[ aVarIdxLst].Bounds.Bottom)
+             Then
+             aVarIdxLst:= aVarIdxFst
+          Else
+             If ( aCtrlBdAr[ aVarIdxLst].Bounds.Top   = aCtrlBdAr[ aVarIdxFst].Bounds.Top   )
+                Then
+                aVarIdxFst:= aVarIdxLst;
+
+End;
+
 Function
           tHelpObj.distEvenCalcVertic( aCtrlBdAr: tControlBoundArray; Out aOutIdxFst: intEger; Out aOutIdxLst: intEger; Out aOutStrtLimit: intEger; Out aOutLastLimit: intEger): tControlBoundsCBData;
 Begin
-          aOutIdxFst   := getldxOfCtrlWthSpecDimValue( ctdTop   , hwMin);  // bottom y of the control that has top    most
-          aOutIdxLst   := getldxOfCtrlWthSpecDimValue( ctdBottom, hwMax);  // top    y of the control that has bottom most
+          aOutIdxFst   := getIdxOfCtrlWthSpecDimValue( ctdTop   , hwMin);  // bottom y of the control that has top    most
+          aOutIdxLst   := getIdxOfCtrlWthSpecDimValue( ctdBottom, hwMax);  // top    y of the control that has bottom most
+
+          preventStalemateVertic( aCtrlBdAr, aOutIdxFst, aOutIdxLst);
 
           aOutStrtLimit:= aCtrlBdAr[ aOutIdxFst].Bounds.Bottom;
           aOutLastLimit:= aCtrlBdAr[ aOutIdxLst].Bounds.Top;
@@ -1543,7 +1711,8 @@ Begin
                      Else
                         vInCurLimit:= vtRe1.setTop ( vInNewStrt);
 
-                      tControl( pslCurSelCtrls[ vtCtlBds[ vIn1].CtrlIdx]).SetBounds( vtRe1.Left, vtRe1.Top, vtRe1.Width, vtRe1.Height);
+                     vtRe1.setControlBounds( tControl( pslCurSelCtrls[ vtCtlBds[ vIn1].CtrlIdx]));
+                     //tControl( pslCurSelCtrls[ vtCtlBds[ vIn1].CtrlIdx]).SetBounds( vtRe1.Left, vtRe1.Top, vtRe1.Width, vtRe1.Height);
              End;
 
           Except End;
