@@ -1,4 +1,4 @@
-        <ToolBar3 Version="1" Count="17">
+        <ToolBar3 Version="1" Count="9">
           <Break Value="True"/>
           <Button1 Name="align_left"/>
           <Button2 Name="align_right"/>
@@ -9,17 +9,25 @@
           <Button7 Name="align_rightmost"/>
           <Button8 Name="align_topmost"/>
           <Button9 Name="align_bottommost"/>
-          <Button10 Name="---------------"/>
-          <Button11 Name="align_height"/>
-          <Button12 Name="align_width"/>
-          <Button13 Name="---------------"/>
-          <Button14 Name="align_highest"/>
-          <Button15 Name="align_lowest"/>
-          <Button16 Name="align_widest"/>
-          <Button17 Name="align_smallest"/>
         </ToolBar3>
-        <ToolBar4 Version="1" Count="2">
+        <ToolBar4 Version="1" Count="7">
+          <Break Value="True"/>
+          <Button1 Name="align_height"/>
+          <Button2 Name="align_width"/>
+          <Button3 Name="---------------"/>
+          <Button4 Name="align_highest"/>
+          <Button5 Name="align_lowest"/>
+          <Button6 Name="align_widest"/>
+          <Button7 Name="align_smallest"/>
+        </ToolBar4>
+        <ToolBar5 Version="1" Count="8">
           <Break Value="True"/>
           <Button1 Name="distribute_horizontally_evenly"/>
           <Button2 Name="distribute_vertically_evenly"/>
-        </ToolBar4>
+          <Button3 Name="---------------"/>
+          <Button4 Name="distribute_horizontally_more"/>
+          <Button5 Name="distribute_horizontally_less"/>
+          <Button6 Name="---------------"/>
+          <Button7 Name="distribute_vertically_more"/>
+          <Button8 Name="distribute_vertically_less"/>
+        </ToolBar5>

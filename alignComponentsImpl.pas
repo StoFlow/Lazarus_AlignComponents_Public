@@ -63,11 +63,11 @@ Const
           SDSTRB_VER_EVN                    = 'distribute_vertically_evenly';
 
           //// min 2 sel ctrls
-          //SDSTRB_HOR_MRE                    = 'distribute_horizontally_more';
-          //SDSTRB_HOR_LSS                    = 'distribute_horizontally_less';
-          //
-          //SDSTRB_VER_MRE                    = 'distribute_vertically_more';
-          //SDSTRB_VER_LSS                    = 'distribute_vertically_less';
+          SDSTRB_HOR_MRE                    = 'distribute_horizontally_more';
+          SDSTRB_HOR_LSS                    = 'distribute_horizontally_less';
+
+          SDSTRB_VER_MRE                    = 'distribute_vertically_more';
+          SDSTRB_VER_LSS                    = 'distribute_vertically_less';
 
 Resourcestring
 
@@ -92,11 +92,20 @@ Resourcestring
           SDSTRB_HEV_IDEMenuCaption         = 'Horizontal gleichmäßig verteilen';
           SDSTRB_VEV_IDEMenuCaption         = 'Vertikal gleichmäßig verteilen';
 
+          SDSTRB_HMR_IDEMenuCaption         = 'Horizontal mehr verteilen';
+          SDSTRB_HLS_IDEMenuCaption         = 'Horizontal weniger verteilen';
+
+          SDSTRB_VMR_IDEMenuCaption         = 'Vertikal mehr verteilen';
+          SDSTRB_VLS_IDEMenuCaption         = 'Vertikal weniger verteilen';
+
 Type
-          tCompDim                          = ( cpdLeft , cpdTop);
-          tCtrlDim                          = ( ctdLeft , ctdRight, ctdTop  , ctdBottom, ctdHorCtr, ctdVerCtr, ctdHeight, ctdWidth);
+          tCompDim                          = ( cpdLeft , cpdTop   );
+
+          tCtrlDim                          = ( ctdLeft , ctdRight , ctdTop  , ctdBottom, ctdHorCtr, ctdVerCtr, ctdHeight, ctdWidth);
+          tCtrlDimArray                     = Array Of tCtrlDim;
+
           tDirection                        = ( dirHoriz, dirVertic);
-          tHgtWthMinOrMax                   = ( hwNone  , hwMin    , hwMax);
+          tRelativeComp                     = ( recoNone, recoMin  , recoMax, recoLess  , recoMore );
 
           tControlBounds                    = Record
 
@@ -107,20 +116,43 @@ Type
           tControlBoundArray                = Specialize tArray< tControlBounds>;
 
 
+          { tHCtrlDimArray }
+
+          tHCtrlDimArray                    = Type Helper For tCtrlDimArray
+
+          Public
+
+             Function                       cnt_get(): intEger;
+
+             Property                       Count: intEger Read cnt_get;
+          End;
+
+
+
           { tControlBoundsComparer }
 
           tControlBoundsComparer            = Class( Specialize tComparer< tControlBounds>)
 
           Private
 
-             dirWhat                        : tDirection;
+             dimsWhich                       : tCtrlDimArray;
 
           Public
 
+             Function                       compare1DHorCtr( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+             Function                       compare1DVerCtr( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+
+             Function                       compare1DLeft  ( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+             Function                       compare1DRight ( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+
+             Function                       compare1DTop   ( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+             Function                       compare1DBottom( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+
+             Function                       compareOneDim  ( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds): intEger;
              Function                       compare( ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds): intEger; Override;
 
              constructor                    create();
-             constructor                    create( aDirection: tDirection);
+             Constructor                    create( aCtrlDims: tCtrlDimArray);
 
           End;
 
@@ -206,7 +238,7 @@ Type
           Public
 
              Procedure                      thinOut( aIdxsToExclude: tDynIntArray);
-             Procedure                      sort( aDir: tDirection);
+             Procedure                      sort( aCtrlDims: tCtrlDimArray);
              Procedure                      forEach( aCallBack: tControlBoundsCallback; Var aData: tControlBoundsCBData);
              Function                       cnt_get(): intEger;
 
@@ -228,6 +260,9 @@ Type
 
              Function                       setLeft( aNewLeft: intEger): intEger;
              Function                       setTop ( aNewTop : intEger): intEger;
+
+             Function                       getDistance( aCntrPart: tRect; aCtrlDims: tCtrlDimArray): intEger;
+             Function                       setDistance( aControl: tControl; aDistance: intEger; aCntrPart: tRect; aCtrlDims: tCtrlDimArray): intEger;
 
              Function                       toString(): String;
 
@@ -260,7 +295,7 @@ Type
              Function                       checkCompSelection(): boolEan;
              Function                       checkCompSelectionAndIndex( aInTemplIdx: intEger; Out aOutTemplIdx: intEger): boolEan;
 
-             Function                       getIdxOfCompWthSpecDimValue( aCompDim: tCompDim; aSpec: tHgtWthMinOrMax): intEger;
+             Function                       getIdxOfCompWthSpecDimValue( aCompDim: tCompDim; aSpec: tRelativeComp): intEger;
 
              Function                       checkCtrlSelection( aMinCnt: intEger= 2): boolEan;
              Function                       checkCtrlSelectionAndIndex( aInTemplIdx: intEger; Out aOutTemplIdx: intEger): boolEan;
@@ -269,14 +304,14 @@ Type
              Procedure                      alignTopMost( aSender: tObject);
 
              Procedure                      alignRightOrBottom( aCtlDim: tCtrlDim; aTemplIdx: intEger= 0); Overload;
-             Procedure                      alignRightOrBottom( aSender: tObject; aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax); Overload;
+             Procedure                      alignRightOrBottom( aSender: tObject; aCtlDim: tCtrlDim; aSpec: tRelativeComp); Overload;
 
              Procedure                      alignRight( aSender: tObject);
              Procedure                      alignBottom( aSender: tObject);
 
-             Function                       ctrlDimHlperCheckOne( aCtrlIdx: intEger; aSpec: tHgtWthMinOrMax; aCheckValue: intEGer; Var aVarResIdx: intEger; Var aVarMostVal: intEger): boolEan;
-             Procedure                      ctrlDimHlper( aCtrlIdx: intEger; aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax; Var aVarResIdx: intEger; Var aVarMostVal: intEger);
-             Function                       getIdxOfCtrlWthSpecDimValue( aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax= hwNone): intEger;
+             Function                       ctrlDimHlperCheckOne( aCtrlIdx: intEger; aSpec: tRelativeComp; aCheckValue: intEGer; Var aVarResIdx: intEger; Var aVarMostVal: intEger): boolEan;
+             Procedure                      ctrlDimHlper( aCtrlIdx: intEger; aCtlDim: tCtrlDim; aSpec: tRelativeComp; Var aVarResIdx: intEger; Var aVarMostVal: intEger);
+             Function                       getIdxOfCtrlWthSpecDimValue( aCtlDim: tCtrlDim; aSpec: tRelativeComp= recoNone): intEger;
 
              Procedure                      alignRightMost( aSender: tObject);
              Procedure                      alignBottomMost( aSender: tObject);
@@ -286,7 +321,7 @@ Type
              Procedure                      alignHeight( aSender: tObject);
              Procedure                      alignWidth( aSender: tObject);
 
-             Procedure                      alignXest( aSender: tObject; aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax= hwNone);
+             Procedure                      alignXest( aSender: tObject; aCtlDim: tCtrlDim; aSpec: tRelativeComp= recoNone);
 
              Procedure                      alignHighest( aSender: tObject);
              Procedure                      alignLowest( aSender: tObject);
@@ -294,21 +329,28 @@ Type
              Procedure                      alignWidest( aSender: tObject);
              Procedure                      alignSmallest( aSender: tObject);
 
-             Function                       getCtrlBounds(): tControlBoundArray;
-
-             Procedure                      quickSort( var aI: Array of Integer; aLo, aHi: Integer);
+             Function                       getCtrlBounds( aMinSelCnt: intEger): tControlBoundArray;
 
              Procedure                      ControlBoundsCallback( Var aData: tControlBoundsCBData);
 
              Procedure                      preventStalemateHoriz ( aCtrlBdAr: tControlBoundArray; Var aVarIdxFst: intEger; Var aVarIdxLst: intEger);
              Function                       distEvenCalcHoriz( aCtrlBdAr: tControlBoundArray; Out aOutIdxFst: intEger; Out aOutIdxLst: intEger; Out aOutStrtLimit: intEger; Out aOutLastLimit: intEger): tControlBoundsCBData;
-             Procedure                      preventStalematevertic( aCtrlBdAr: tControlBoundArray; Var aVarIdxFst: intEger; Var aVarIdxLst: intEger);
+             Procedure                      preventStalemateVertic( aCtrlBdAr: tControlBoundArray; Var aVarIdxFst: intEger; Var aVarIdxLst: intEger);
              Function                       distEvenCalcVertic( aCtrlBdAr: tControlBoundArray; Out aOutIdxFst: intEger; Out aOutIdxLst: intEger; Out aOutStrtLimit: intEger; Out aOutLastLimit: intEger): tControlBoundsCBData;
 
              Function                       distEvenCalc( aDirection: tDirection; Var aVarCtrlBdAr: tControlBoundArray; Out aOutStrtLimit: intEger; Out aOutDistance: intEger): boolEan;
              Procedure                      distributeEvenly( aDirection: tDirection);
              Procedure                      distrHorEvn( aSender: tObject);
              Procedure                      distrVerEvn( aSender: tObject);
+
+             Function                       distrDSCorrectDistance( aDistance: intEger; aSpec: tRelativeComp): intEger;
+             Procedure                      distrDimsSpec( aSender: tObject; aCtrlDims: tCtrlDimArray; aSpec: tRelativeComp);
+
+             Procedure                      distrHorMore( aSender: tObject);
+             Procedure                      distrHorLess( aSender: tObject);
+
+             Procedure                      distrVerMore( aSender: tObject);
+             Procedure                      distrVerLess( aSender: tObject);
 
           Public
 
@@ -337,6 +379,12 @@ Var
 
           imcCmd_DSH_EVN                    : tIDEMenuCommand= Nil;   // distr hor ev
           imcCmd_DSV_EVN                    : tIDEMenuCommand= Nil;   // distr ver ev
+
+          imcCmd_DSH_MRE                    : tIDEMenuCommand= Nil;   // distr hor more
+          imcCmd_DSH_LSS                    : tIDEMenuCommand= Nil;   // distr hor less
+
+          imcCmd_DSV_MRE                    : tIDEMenuCommand= Nil;   // distr ver more
+          imcCmd_DSV_LSS                    : tIDEMenuCommand= Nil;   // distr ver less
 
           {%H-}ho_Obj: tHelpObj             = Nil;
           {%H+}
@@ -446,6 +494,12 @@ Begin
           imcCmd_DSH_EVN:= registerOneCmd( SDSTRB_HOR_EVN, SDSTRB_HEV_IDEMenuCaption    , @ho_Obj.distrHorEvn);
           imcCmd_DSV_EVN:= registerOneCmd( SDSTRB_VER_EVN, SDSTRB_VEV_IDEMenuCaption    , @ho_Obj.distrVerEvn);
 
+          imcCmd_DSH_MRE:= registerOneCmd( SDSTRB_HOR_MRE, SDSTRB_HMR_IDEMenuCaption    , @ho_Obj.distrHorMore);
+          imcCmd_DSH_LSS:= registerOneCmd( SDSTRB_HOR_LSS, SDSTRB_HLS_IDEMenuCaption    , @ho_Obj.distrHorLess);
+
+          imcCmd_DSV_MRE:= registerOneCmd( SDSTRB_VER_MRE, SDSTRB_VMR_IDEMenuCaption    , @ho_Obj.distrVerMore);
+          imcCmd_DSV_LSS:= registerOneCmd( SDSTRB_VER_LSS, SDSTRB_VLS_IDEMenuCaption    , @ho_Obj.distrVerLess);
+
           GlobalDesignHook.AddHandlerSetSelection( @ho_Obj.PropHookSetSelection);
           //GetPropertyEditorHook();
 End;
@@ -504,11 +558,11 @@ Begin
 End;
 
 Procedure
-          tHControlBoundArray.sort( aDir: tDirection);
+          tHControlBoundArray.sort( aCtrlDims: tCtrlDimArray);
 Var
           Comparer                          : tControlBoundsComparer;
 Begin
-          Comparer:= tControlBoundsComparer.Create( aDir);
+          Comparer:= tControlBoundsComparer.Create( aCtrlDims);
           Specialize tArrayHelper< tControlBounds>.sort( Self, Comparer);
           freeAndNil( Comparer);
 End;
@@ -524,49 +578,206 @@ Begin
           Result:= length( Self);
 End;
 
+          { tHCtrlDimArray }
+
+Function
+          tHCtrlDimArray.cnt_get(): intEger;
+Begin
+          Result:= -1;
+          If Not assigned( Self)
+             Then
+             Exit;
+
+          Result:= length( Self);
+End;
+
+Operator
+          In ( aElement: tCtrlDim; aCtrlDimArr: tCtrlDimArray): boolEan;
+Var
+          vIn1                              : intEger;
+          vIn2                              : intEger;
+Begin
+          Result:= False;
+
+          If Not assigned( aCtrlDimArr)
+             Then
+             Exit;
+
+          vIn2:= aCtrlDimArr.Count;
+
+          For vIn1:= 0 To vIn2- 1
+              Do
+              Begin
+                   If ( aCtrlDimArr[ vIn1]= aElement)
+                      Then
+                      Begin
+                           Result:= True;
+                           Exit;
+                   End;
+          End;
+End;
 
           { tControlBoundsComparer }
 
 Function
-          tControlBoundsComparer.compare( ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds): intEger;
+          tControlBoundsComparer.compare1DHorCtr( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
 Begin
-          Result:= 0;
+          aOutCompRes:= 0;
+          Result:= ( aDim= ctdHorCtr);
 
-          If dirWhat= dirHoriz
+          If Result
              Then
              If aLeft.Bounds.CenterPoint.X< aRght.Bounds.CenterPoint.X
                 Then
-                Result:= -1
+                aOutCompRes:= -1
              Else
                 If aLeft.Bounds.CenterPoint.X> aRght.Bounds.CenterPoint.X
                    Then
-                   Result:= +1;
+                   aOutCompRes:= +1;
 
-          If dirWhat= dirVertic
+End;
+
+Function
+          tControlBoundsComparer.compare1DVerCtr( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+Begin
+          aOutCompRes:= 0;
+          Result:= ( aDim= ctdVerCtr);
+
+          If Result
              Then
              If aLeft.Bounds.CenterPoint.Y< aRght.Bounds.CenterPoint.Y
                 Then
-                Result:= -1
+                aOutCompRes:= -1
              Else
                 If aLeft.Bounds.CenterPoint.Y> aRght.Bounds.CenterPoint.Y
                    Then
-                   Result:= +1;
+                   aOutCompRes:= +1;
 
+End;
+
+Function
+          tControlBoundsComparer.compare1DLeft( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+Begin
+          aOutCompRes:= 0;
+          Result:= ( aDim= ctdLeft);
+
+          If Result
+             Then
+             If aLeft.Bounds.Left< aRght.Bounds.Left
+                Then
+                aOutCompRes:= -1
+             Else
+                If aLeft.Bounds.Left> aRght.Bounds.Left
+                   Then
+                   aOutCompRes:= +1;
+
+End;
+
+Function
+          tControlBoundsComparer.compare1DRight( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+Begin
+          aOutCompRes:= 0;
+          Result:= ( aDim= ctdRight);
+
+          If Result
+             Then
+             If aLeft.Bounds.Right< aRght.Bounds.Right
+                Then
+                aOutCompRes:= -1
+             Else
+                If aLeft.Bounds.Right> aRght.Bounds.Right
+                   Then
+                   aOutCompRes:= +1;
+
+End;
+
+Function
+          tControlBoundsComparer.compare1DTop( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+Begin
+          aOutCompRes:= 0;
+          Result:= ( aDim= ctdTop);
+
+          If Result
+             Then
+             If aLeft.Bounds.Top< aRght.Bounds.Top
+                Then
+                aOutCompRes:= -1
+             Else
+                If aLeft.Bounds.Top> aRght.Bounds.Top
+                   Then
+                   aOutCompRes:= +1;
+End;
+
+Function
+          tControlBoundsComparer.compare1DBottom( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
+Begin
+          aOutCompRes:= 0;
+          Result:= ( aDim= ctdBottom);
+
+          If Result
+             Then
+             If aLeft.Bounds.Bottom< aRght.Bounds.Bottom
+                Then
+                aOutCompRes:= -1
+             Else
+                If aLeft.Bounds.Bottom> aRght.Bounds.Bottom
+                   Then
+                   aOutCompRes:= +1;
+End;
+
+Function
+          tControlBoundsComparer.compareOneDim( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds): intEger;
+Begin
+          Result:= 0;
+
+          If Not compare1DHorCtr( aDim, aLeft, aRght, Result)
+             Then
+             If Not compare1DVerCtr( aDim, aLeft, aRght, Result)
+                Then
+                If Not compare1DLeft( aDim, aLeft, aRght, Result)
+                   Then
+                   If Not compare1DRight( aDim, aLeft, aRght, Result)
+                      Then
+                      If Not compare1DTop( aDim, aLeft, aRght, Result)
+                         Then
+                         compare1DBottom( aDim, aLeft, aRght, Result);
+
+
+
+End;
+
+Function
+          tControlBoundsComparer.compare( ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds): intEger;
+Var
+          vIn1                              : intEger;
+          vIn2                              : intEger;
+Begin
+          Result:= 0;
+
+          vIn1:= 0;
+          vIn2:= dimsWhich.Count;
+
+          While ( Result= 0) And ( vIn1< vIn2)
+                Do
+                Begin
+                     Result:= compareOneDim( dimsWhich[ vIn1], aLeft, aRght);
+                     inc( vIn1, 1);
+          End;
 End;
 
 
 constructor
           tControlBoundsComparer.create();
 Begin
-          dirWhat:= dirHoriz;
           inherited create();
+          dimsWhich:= [ ctdHorCtr];
 End;
 
 constructor
-          tControlBoundsComparer.create( aDirection: tDirection);
+          tControlBoundsComparer.create( aCtrlDims: tCtrlDimArray);
 Begin
           create();
-          dirWhat:= aDirection;
+          dimsWhich:= aCtrlDims;
 End;
 
           { tTypeHlprBase }
@@ -622,12 +833,12 @@ Begin
 
           vIn2:= Length( Self);
           For vIn1:= 0 To vIn2- 1
-            Do
-            If ( Self[ vIn1]= aValue)
-               Then
-               Begin
-                    Result:= vIn1;
-                    Exit;
+              Do
+              If ( Self[ vIn1]= aValue)
+                 Then
+                 Begin
+                      Result:= vIn1;
+                      Exit;
           End;
 End;
 
@@ -646,10 +857,10 @@ Begin
 
           vIn2:= length( Self);
           For vIn1:= 0 To vIn2- 1
-            Do
-            If ( -1= Result.IndexOf[ Self[ vIn1]])
-               Then
-               Result:= conCat( Result, [ Self[ vIn1]]);
+              Do
+              If ( -1= Result.IndexOf[ Self[ vIn1]])
+                 Then
+                 Result:= conCat( Result, [ Self[ vIn1]]);
 
 End;
 
@@ -792,6 +1003,37 @@ Begin
 End;
 
 Function
+          tHRect.getDistance( aCntrPart: tRect; aCtrlDims: tCtrlDimArray): intEger;
+Begin
+          If ( ctdLeft In aCtrlDims)
+             Then
+             Result:= Self.Left- aCntrPart.Right;
+
+          If ( ctdTop  In aCtrlDims)
+             Then
+             Result:= Self.Top - aCntrPart.Bottom;
+
+End;
+
+Function
+          tHRect.setDistance( aControl: tControl; aDistance: intEger; aCntrPart: tRect; aCtrlDims: tCtrlDimArray): intEger;
+Begin
+          If ( ctdLeft In aCtrlDims)
+             Then
+             Begin
+                  Result:= aCntrPart.Right+ aDistance;
+                  Self.setLeft( Result);
+             End
+          Else
+             Begin
+                  Result:= aCntrPart.Bottom+ aDistance;
+                  Self.setTop( Result);
+          End;
+
+          setControlBounds( aControl);
+End;
+
+Function
           tHRect.toString(): String;
 Begin
           Result:= 'Left= %d, Top= %d, Width= %d, Height= %d';
@@ -879,7 +1121,8 @@ Begin
                          imcCmd_LFT_MST, imcCmd_RGT_MST, imcCmd_TOP_MST, imcCmd_BTM_MST,
                          imcCmd_SZE_HGT, imcCmd_SZE_WTH,
                          imcCmd_SZE_HST, imcCmd_SZE_LST, imcCmd_SZE_WST, imcCmd_SZE_SST,
-                         imcCmd_DSH_EVN, imcCmd_DSV_EVN
+                         imcCmd_DSH_EVN, imcCmd_DSV_EVN,
+                         imcCmd_DSH_MRE, imcCmd_DSH_LSS, imcCmd_DSV_MRE, imcCmd_DSV_LSS
                         ],
                         False
           );
@@ -897,7 +1140,8 @@ Begin
                                          imcCmd_RGT    , imcCmd_BTM    ,
                                          imcCmd_RGT_MST, imcCmd_BTM_MST,
                                          imcCmd_SZE_HGT, imcCmd_SZE_WTH,
-                                         imcCmd_SZE_HST, imcCmd_SZE_LST, imcCmd_SZE_WST, imcCmd_SZE_SST
+                                         imcCmd_SZE_HST, imcCmd_SZE_LST, imcCmd_SZE_WST, imcCmd_SZE_SST,
+                                         imcCmd_DSH_MRE, imcCmd_DSH_LSS, imcCmd_DSV_MRE, imcCmd_DSV_LSS
                                         ],
                                         True
                           );
@@ -1004,7 +1248,7 @@ End;
 
 
 Function
-          tHelpObj.getIdxOfCompWthSpecDimValue( aCompDim: tCompDim; aSpec: tHgtWthMinOrMax): intEger;
+          tHelpObj.getIdxOfCompWthSpecDimValue( aCompDim: tCompDim; aSpec: tRelativeComp): intEger;
 Var
           vInMost                           : intEger;
           vInLftC                           : intEger;
@@ -1018,7 +1262,7 @@ Begin
              Exit;
 
           Try
-             If aSpec= hwMax
+             If aSpec= recoMax
                 Then
                 vInMost:= Low ( intEger)
              Else
@@ -1031,18 +1275,18 @@ Begin
                  Begin
                       GetComponentLeftTopOrDesignInfo( tComponent( pslCurSelComps[ vIn1]), vInLftC, vInTopC);
 
-                      If ( ( aCompDim= cpdLeft) And ( aSpec= hwMin) And ( vInLftC< vInMost))
+                      If ( ( aCompDim= cpdLeft) And ( aSpec= recoMin) And ( vInLftC< vInMost))
                          Or
-                         ( ( aCompDim= cpdLeft) And ( aSpec= hwMax) And ( vInLftC> vInMost))
+                         ( ( aCompDim= cpdLeft) And ( aSpec= recoMax) And ( vInLftC> vInMost))
                          Then
                          Begin
                               vInMost:= vInLftC;
                               Result:= vIn1;
                       End;
 
-                      If ( ( aCompDim= cpdTop ) And ( aSpec= hwMin) And ( vInTopC< vInMost))
+                      If ( ( aCompDim= cpdTop ) And ( aSpec= recoMin) And ( vInTopC< vInMost))
                          Or
-                         ( ( aCompDim= cpdTop ) And ( aSpec= hwMax) And ( vInTopC> vInMost))
+                         ( ( aCompDim= cpdTop ) And ( aSpec= recoMax) And ( vInTopC> vInMost))
                          Then
                          Begin
                               vInMost:= vInTopC;
@@ -1132,7 +1376,7 @@ Var
           vInTmplIdx                        : intEger;
 Begin
           nOp( aSender);
-          vInTmplIdx:= getIdxOfCompWthSpecDimValue( cpdLeft, hwMin);
+          vInTmplIdx:= getIdxOfCompWthSpecDimValue( cpdLeft, recoMin);
 
           If ( -1< vInTmplIdx)
              Then
@@ -1146,7 +1390,7 @@ Var
 Begin
           nOp( aSender);
 
-          vInTmplIdx:= getIdxOfCompWthSpecDimValue( cpdTop, hwMin);
+          vInTmplIdx:= getIdxOfCompWthSpecDimValue( cpdTop, recoMin);
 
           If ( -1< vInTmplIdx)
              Then
@@ -1237,7 +1481,6 @@ Begin
                                               vtReCi.Top   := vtReCi.Top+ vInDiff;
                                       End;
                                       vtReCi.setControlBounds( tControl( pslCurSelCtrls[ vIn1]));
-                                      //tControl( pslCurSelCtrls[ vIn1]).SetBounds( vtReCi.Left, vtReCi.Top, vtReCi.Width, vtReCi.Height);
                               End;
                       End;
              End;
@@ -1247,13 +1490,13 @@ Begin
 End;
 
 Function
-          tHelpObj.ctrlDimHlperCheckOne( aCtrlIdx: intEger; aSpec: tHgtWthMinOrMax; aCheckValue: intEger; Var aVarResIdx: intEger; Var aVarMostVal: intEger): boolEan;
+          tHelpObj.ctrlDimHlperCheckOne( aCtrlIdx: intEger; aSpec: tRelativeComp; aCheckValue: intEger; Var aVarResIdx: intEger; Var aVarMostVal: intEger): boolEan;
 Begin
           Result:= False;
           Try
-             If ( ( aSpec= hwMax) And ( aCheckValue  > aVarMostVal))
+             If ( ( aSpec= recoMax) And ( aCheckValue  > aVarMostVal))
                 Or
-                ( ( aSpec= hwMin) And ( aCheckValue  < aVarMostVal))
+                ( ( aSpec= recoMin) And ( aCheckValue  < aVarMostVal))
                 Then
                 Begin
                      aVarMostVal:= aCheckValue;
@@ -1265,7 +1508,7 @@ Begin
 End;
 
 Procedure
-          tHelpObj.ctrlDimHlper( aCtrlIdx: intEger; aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax; Var aVarResIdx: intEger; Var aVarMostVal: intEger);
+          tHelpObj.ctrlDimHlper( aCtrlIdx: intEger; aCtlDim: tCtrlDim; aSpec: tRelativeComp; Var aVarResIdx: intEger; Var aVarMostVal: intEger);
 Var
           vtReCi                            : tRect;
 Begin
@@ -1288,7 +1531,7 @@ Begin
 End;
 
 Function
-          tHelpObj.getIdxOfCtrlWthSpecDimValue( aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax= hwNone): intEger;
+          tHelpObj.getIdxOfCtrlWthSpecDimValue( aCtlDim: tCtrlDim; aSpec: tRelativeComp= recoNone): intEger;
 Var
           vInMost                           : intEger;
           vIn1                              : intEger;
@@ -1301,7 +1544,7 @@ Begin
              Exit;
 
           Try
-             If aSpec= hwMax
+             If aSpec= recoMax
                 Then
                 vInMost:= Low ( intEger)
              Else
@@ -1318,13 +1561,13 @@ Begin
 End;
 
 Procedure
-          tHelpObj.alignRightOrBottom( aSender: tObject; aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax); Overload;
+          tHelpObj.alignRightOrBottom( aSender: tObject; aCtlDim: tCtrlDim; aSpec: tRelativeComp); Overload;
 Var
           vInTmplIdx                        : intEger;
 Begin
           nOp( aSender);
 
-          If ( hwNone<> aSpec)
+          If ( recoNone<> aSpec)
              Then
              vInTmplIdx:= getIdxOfCtrlWthSpecDimValue( aCtlDim, aSpec)
           Else
@@ -1339,25 +1582,25 @@ End;
 Procedure
           tHelpObj.alignRight( aSender: tObject);
 Begin
-          alignRightOrBottom( aSender, ctdRight, hwNone);
+          alignRightOrBottom( aSender, ctdRight, recoNone);
 End;
 
 Procedure
           tHelpObj.alignBottom( aSender: tObject);
 Begin
-          alignRightOrBottom( aSender, ctdBottom, hwNone);
+          alignRightOrBottom( aSender, ctdBottom, recoNone);
 End;
 
 Procedure
           tHelpObj.alignRightMost( aSender: tObject);
 Begin
-          alignRightOrBottom( aSender, ctdRight, hwMax);
+          alignRightOrBottom( aSender, ctdRight, recoMax);
 End;
 
 Procedure
           tHelpObj.alignBottomMost( aSender: tObject);
 Begin
-          alignRightOrBottom( aSender, ctdBottom, hwMax);
+          alignRightOrBottom( aSender, ctdBottom, recoMax);
 End;
 
 Procedure
@@ -1402,7 +1645,6 @@ Begin
 
                               End;
                               vtReCi.setControlBounds( tControl( pslCurSelCtrls[ vIn1]));
-                              //tControl( pslCurSelCtrls[ vIn1]).SetBounds( vtReCi.Left, vtReCi.Top, vtReCi.Width, vtReCi.Height);
                       End;
              End;
              tryRefreshLUR();
@@ -1426,7 +1668,7 @@ Begin
 End;
 
 Procedure
-          tHelpObj.alignXest( aSender: tObject; aCtlDim: tCtrlDim; aSpec: tHgtWthMinOrMax= hwNone);
+          tHelpObj.alignXest( aSender: tObject; aCtlDim: tCtrlDim; aSpec: tRelativeComp= recoNone);
 Var
           vInTmplIdx                        : intEger;
 Begin
@@ -1442,30 +1684,30 @@ End;
 Procedure
           tHelpObj.alignHighest( aSender: tObject);
 Begin
-          alignXest( aSender, ctdHeight, hwMax);
+          alignXest( aSender, ctdHeight, recoMax);
 End;
 
 Procedure
           tHelpObj.alignLowest( aSender: tObject);
 Begin
-          alignXest( aSender, ctdHeight, hwMin);
+          alignXest( aSender, ctdHeight, recoMin);
 End;
 
 
 Procedure
           tHelpObj.alignWidest( aSender: tObject);
 Begin
-          alignXest( aSender, ctdWidth, hwMax);
+          alignXest( aSender, ctdWidth, recoMax);
 End;
 
 Procedure
           tHelpObj.alignSmallest( aSender: tObject);
 Begin
-          alignXest( aSender, ctdWidth, hwMin);
+          alignXest( aSender, ctdWidth, recoMin);
 End;
 
 Function
-          tHelpObj.getCtrlBounds(): tControlBoundArray;
+          tHelpObj.getCtrlBounds( aMinSelCnt: intEger): tControlBoundArray;
 Var
           vIn1                              : intEger;
           vIn2                              : intEger;
@@ -1474,12 +1716,12 @@ Var
           vtCBds1                           : tControlBounds;
 Begin
           Result:= [];
-          If Not checkCtrlSelection( 3)
+          If Not checkCtrlSelection( aMinSelCnt)
              Then
              Exit;
 
           vIn2:= pslCurSelCtrls.Count;
-          setLength( Result, vIn2{- 2});
+          setLength( Result, vIn2);
           vResidx:= 0;
 
           For vIn1:= 0 To vIn2- 1
@@ -1493,47 +1735,6 @@ Begin
           End;
 
 End;
-
-procedure
-          tHelpObj.quickSort( var aI: Array of Integer; aLo, aHi: Integer);
-Var
-          Lo                                : Integer;
-          Hi                                : Integer;
-          Pivot                             : Integer;
-          T                                 : Integer;
-Begin
-          Lo    := ALo;
-          Hi    := AHi;
-          Pivot := AI[ ( Lo+ Hi) Div 2];
-          Repeat
-                While aI[ Lo]< Pivot
-                      Do
-                      inc(Lo) ;
-                While aI[ Hi]> Pivot
-                      Do
-                      dec(Hi);
-
-                If Lo<= Hi
-                   Then
-                   Begin
-                        T      := aI[ Lo];
-                        aI[ Lo]:= aI[ Hi];
-                        aI[ Hi]:= T;
-
-                        inc( Lo);
-                        dec( Hi);
-                End;
-          Until Lo> Hi;
-
-          If Hi> aLo
-             Then
-             quickSort( aI, aLo, Hi) ;
-
-          If Lo< aHi
-             Then
-             quickSort( aI, Lo, aHi) ;
-End;
-
 
 Procedure
           tHelpObj.ControlBoundsCallback( Var aData: tControlBoundsCBData);
@@ -1577,8 +1778,8 @@ End;
 Function
           tHelpObj.distEvenCalcHoriz( aCtrlBdAr: tControlBoundArray; Out aOutIdxFst: intEger; Out aOutIdxLst: intEger; Out aOutStrtLimit: intEger; Out aOutLastLimit: intEger): tControlBoundsCBData;
 Begin
-          aOutIdxFst   := getIdxOfCtrlWthSpecDimValue( ctdLeft  , hwMin);  // right  x of the control that has left   most
-          aOutIdxLst   := getIdxOfCtrlWthSpecDimValue( ctdRight , hwMax);  // left   x of the control that has right  most
+          aOutIdxFst   := getIdxOfCtrlWthSpecDimValue( ctdLeft  , recoMin);  // right  x of the control that has left   most
+          aOutIdxLst   := getIdxOfCtrlWthSpecDimValue( ctdRight , recoMax);  // left   x of the control that has right  most
 
           preventStalemateHoriz( aCtrlBdAr, aOutIdxFst, aOutIdxLst);
 
@@ -1609,8 +1810,8 @@ End;
 Function
           tHelpObj.distEvenCalcVertic( aCtrlBdAr: tControlBoundArray; Out aOutIdxFst: intEger; Out aOutIdxLst: intEger; Out aOutStrtLimit: intEger; Out aOutLastLimit: intEger): tControlBoundsCBData;
 Begin
-          aOutIdxFst   := getIdxOfCtrlWthSpecDimValue( ctdTop   , hwMin);  // bottom y of the control that has top    most
-          aOutIdxLst   := getIdxOfCtrlWthSpecDimValue( ctdBottom, hwMax);  // top    y of the control that has bottom most
+          aOutIdxFst   := getIdxOfCtrlWthSpecDimValue( ctdTop   , recoMin);  // bottom y of the control that has top    most
+          aOutIdxLst   := getIdxOfCtrlWthSpecDimValue( ctdBottom, recoMax);  // top    y of the control that has bottom most
 
           preventStalemateVertic( aCtrlBdAr, aOutIdxFst, aOutIdxLst);
 
@@ -1672,7 +1873,7 @@ Begin
 
              aOutDistance:= vInAvlRest Div ( vInCntCtls+ 1);
 
-             aVarCtrlBdAr.Sort( aDirection);
+             aVarCtrlBdAr.Sort( [ ctdHorCtr]);
              Result:= ( vInCntCtls> 0);
 
           Except End;
@@ -1691,7 +1892,7 @@ Var
           vInNewStrt                        : intEger;
           vtRe1                             : tRect;
 Begin
-          vtCtlBds:= getCtrlBounds();
+          vtCtlBds:= getCtrlBounds( 3);
           If Not distEvenCalc( aDirection, vtCtlBds, vInCurLimit, vInCtlDstc)
              Then
              Exit;
@@ -1712,7 +1913,6 @@ Begin
                         vInCurLimit:= vtRe1.setTop ( vInNewStrt);
 
                      vtRe1.setControlBounds( tControl( pslCurSelCtrls[ vtCtlBds[ vIn1].CtrlIdx]));
-                     //tControl( pslCurSelCtrls[ vtCtlBds[ vIn1].CtrlIdx]).SetBounds( vtRe1.Left, vtRe1.Top, vtRe1.Width, vtRe1.Height);
              End;
 
           Except End;
@@ -1734,6 +1934,104 @@ Begin
           nOp( aSender);
           distributeEvenly( dirVertic);
 End;
+
+Function
+          tHelpObj.distrDSCorrectDistance( aDistance: intEger; aSpec: tRelativeComp): intEger;
+Begin
+          If ( recoMore= aSpec)
+             Then
+             Begin
+                  If ( aDistance< 1)
+                     Then
+                     Result:= 1
+                  Else
+                     Result:= aDistance* 2;
+             End
+          Else
+             Begin
+                  If ( aDistance< 4)
+                     Then
+                     Result:= 0
+                  Else
+                     Result:= aDistance Div 2;
+          End;
+End;
+
+Procedure
+          tHelpObj.distrDimsSpec( aSender: tObject; aCtrlDims: tCtrlDimArray; aSpec: tRelativeComp);
+Var
+          vtCtlBds                          : tControlBoundArray;
+
+          vInOrgDist                        : intEger;
+          vInNewDist                        : intEger;
+
+          vIn1                              : intEger;
+          vInCntCtls                        : intEger;
+
+          vtReLstBef                        : tRect;
+          vtReCurBef                        : tRect;
+          vtReLstAct                        : tRect;
+
+          vtLstCtrl                         : tControl;
+          vtCurCtrl                         : tControl;
+Begin
+          nOp( aSender);
+          vtCtlBds:= getCtrlBounds( 2);
+          vInCntCtls:= vtCtlBds.Count;
+          If ( 2> vInCntCtls)
+             Or
+             ( 2> aCtrlDims.Count)
+             Then
+             Exit;
+
+          vtCtlBds.Sort( aCtrlDims);
+
+          Try
+
+             For vIn1:= 1 To vInCntCtls- 1
+                 Do
+                 Begin
+                      vtReCurBef := vtCtlBds[ vIn1].Bounds;
+                      vtReLstBef := vtCtlBds[ vIn1- 1].Bounds;
+
+                      vInOrgDist := vtReCurBef.getDistance( vtReLstBef, aCtrlDims);
+                      vInNewDist := distrDSCorrectDistance( vInOrgDist, aSpec);
+
+                      vtLstCtrl  := tControl( pslCurSelCtrls[ vtCtlBds[ vIn1- 1].CtrlIdx]);
+                      vtReLstAct := vtLstCtrl.BoundsRect;
+
+                      vtCurCtrl  := tControl( pslCurSelCtrls[ vtCtlBds[ vIn1].CtrlIdx]);
+                      vtReCurBef .setDistance( vtCurCtrl, vInNewDist, vtReLstAct, aCtrlDims);
+             End;
+
+          Except End;
+End;
+
+
+Procedure
+          tHelpObj.distrHorMore( aSender: tObject);
+Begin
+          distrDimsSpec( aSender, [ ctdLeft, ctdRight], recoMore);
+End;
+
+Procedure
+          tHelpObj.distrHorLess( aSender: tObject);
+Begin
+          distrDimsSpec( aSender, [ ctdLeft, ctdRight], recoLess);
+End;
+
+Procedure
+          tHelpObj.distrVerMore( aSender: tObject);
+Begin
+          distrDimsSpec( aSender, [ ctdTop, ctdBottom], recoMore);
+End;
+
+Procedure
+          tHelpObj.distrVerLess( aSender: tObject);
+Begin
+          distrDimsSpec( aSender, [ ctdTop, ctdBottom], recoLess);
+End;
+
 
 Constructor
           tHelpObj.create();
