@@ -9,6 +9,16 @@ Unit
 
 Interface
 
+Uses
+          Forms;
+
+Type
+          // helps to debug during runtime w/o much changing
+          tHelpObjExt                          = Class
+
+             Procedure                         alignLeft( aForm: tForm);
+
+          End;
 
 Procedure
           Register;
@@ -21,7 +31,7 @@ Uses
           Generics.Defaults,
           Generics.Collections,
           Controls,
-          Forms,
+          //Forms,
           Dialogs,
           menuintf,
           IDECommands,
@@ -275,6 +285,8 @@ Type
              pslCurSelComps                 : tPersistentSelectionList;
              pslCurSelCtrls                 : tPersistentSelectionList;
 
+          Public
+
              Function                       getNonFormSelection( Const aSelection: tPersistentSelectionList): tPersistentSelectionList;
              Function                       getControlSelection(): tPersistentSelectionList;
              Procedure                      PropHookSetSelection( Const aSelection: tPersistentSelectionList);
@@ -352,7 +364,6 @@ Type
              Procedure                      distrVerMore( aSender: tObject);
              Procedure                      distrVerLess( aSender: tObject);
 
-          Public
 
              Constructor                    create();
           End;
@@ -1338,16 +1349,18 @@ Begin
 
                                  End
                               Else
-                                 Begin
-                                      SetComponentLeftTopOrDesignInfo( tComponent( pslCurSelComps[ vIn1]), vInLftC, vInTop);
-                                      {$notes off}
-                                      If ( pslCurSelComps[ vIn1] Is tControl)
-                                         Then
-                                         signalModAndAddUndoAction( pslCurSelComps[ vIn1], 'Top' , vInTopC, vInTop )
-                                      Else
-                                         signalModified( pslCurSelComps[ vIn1])
-                                      {$notes on}
-                              End;
+                                 If ( aCompDim= cpdTop) And ( vInTopC<> vInTop)
+                                    Then
+                                    Begin
+                                         SetComponentLeftTopOrDesignInfo( tComponent( pslCurSelComps[ vIn1]), vInLftC, vInTop);
+                                         {$notes off}
+                                         If ( pslCurSelComps[ vIn1] Is tControl)
+                                            Then
+                                            signalModAndAddUndoAction( pslCurSelComps[ vIn1], 'Top' , vInTopC, vInTop )
+                                         Else
+                                            signalModified( pslCurSelComps[ vIn1])
+                                         {$notes on}
+                                 End;
                       End;
              End;
              tryRefreshLUR();
@@ -2040,6 +2053,28 @@ Begin
           pslCurSelCtrls:= Nil;
 End;
 
+          { tHelpObjExt }
+Procedure
+          tHelpObjExt.alignLeft( aForm: tForm);
+Var
+          vtHo1                             : tHelpObj;
+          vtPsL1                            : tPersistentSelectionList;
+          vIn1                              : intEger;
+          vIn2                              : intEger;
+Begin
+          vtHo1:= tHelpObj.create();
+
+          vtPsl1:= tPersistentSelectionList.create();
+          vIn2:= aForm.ControlCount;
+          For vIn1:= 0 To vIn2- 1
+              Do
+              vtPsl1.Add( aForm.Controls[ vIn1]);
+
+          vtHo1.PropHookSetSelection( vtPsl1);
+          vtHo1.alignLeft( Self);
+
+          freeAndNil( vtHo1);
+End;
 
 Initialization
 Begin
