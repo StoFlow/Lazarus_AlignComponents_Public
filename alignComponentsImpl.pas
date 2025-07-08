@@ -10,13 +10,18 @@ Unit
 Interface
 
 Uses
-          Forms;
+          propedits
+          ,
+          Forms
+          ;
 
 Type
           // helps to debug during runtime w/o much changing
           tHelpObjExt                          = Class
 
+             Function                          prepPersList( aForm: tForm): tPersistentSelectionList;
              Procedure                         alignLeft( aForm: tForm);
+             Procedure                         distrVerEvn( aForm: tForm);
 
           End;
 
@@ -37,7 +42,7 @@ Uses
           IDECommands,
           ToolBarIntf,
           FormEditingIntf,
-          propedits,
+          //propedits,
           componenteditors,
           lcltype;
 
@@ -1852,6 +1857,7 @@ Var
           vInCtlsDim                        : intEger;           // sum of all heights/widths
           vInAvlRest                        : intEger;           // remaining space (might be negative)
 
+          vtCtDmSort                        : tCtrlDim;
 Begin
           Result:= False;
 
@@ -1886,7 +1892,11 @@ Begin
 
              aOutDistance:= vInAvlRest Div ( vInCntCtls+ 1);
 
-             aVarCtrlBdAr.Sort( [ ctdHorCtr]);
+             vtCtDmSort:= ctdVerCtr;
+             If aDirection= dirHoriz
+                Then
+                vtCtDmSort:= ctdHorCtr;
+             aVarCtrlBdAr.Sort( [ vtCtDmSort]);
              Result:= ( vInCntCtls> 0);
 
           Except End;
@@ -2054,24 +2064,50 @@ Begin
 End;
 
           { tHelpObjExt }
+
+Function
+          tHelpObjExt.prepPersList( aForm: tForm): tPersistentSelectionList;
+Var
+          vIn1                              : intEger;
+          vIn2                              : intEger;
+Begin
+          Result:= tPersistentSelectionList.create();
+          vIn2:= aForm.ControlCount;
+
+          For vIn1:= 0 To vIn2- 1
+              Do
+              Result.Add( aForm.Controls[ vIn1]);
+
+End;
+
 Procedure
           tHelpObjExt.alignLeft( aForm: tForm);
 Var
           vtHo1                             : tHelpObj;
           vtPsL1                            : tPersistentSelectionList;
-          vIn1                              : intEger;
-          vIn2                              : intEger;
 Begin
           vtHo1:= tHelpObj.create();
 
-          vtPsl1:= tPersistentSelectionList.create();
-          vIn2:= aForm.ControlCount;
-          For vIn1:= 0 To vIn2- 1
-              Do
-              vtPsl1.Add( aForm.Controls[ vIn1]);
+          vtPsl1:= prepPersList( aForm);
 
           vtHo1.PropHookSetSelection( vtPsl1);
           vtHo1.alignLeft( Self);
+
+          freeAndNil( vtHo1);
+End;
+
+Procedure
+          tHelpObjExt.distrVerEvn( aForm: tForm);
+Var
+          vtHo1                             : tHelpObj;
+          vtPsL1                            : tPersistentSelectionList;
+Begin
+          vtHo1:= tHelpObj.create();
+
+          vtPsl1:= prepPersList( aForm);
+
+          vtHo1.PropHookSetSelection( vtPsl1);
+          vtHo1.distrVerEvn( Self);
 
           freeAndNil( vtHo1);
 End;
