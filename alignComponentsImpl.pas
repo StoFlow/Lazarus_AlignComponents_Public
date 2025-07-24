@@ -9,21 +9,21 @@ Unit
 
 Interface
 
-Uses
-          propedits
-          ,
-          Forms
-          ;
-
-Type
-          // helps to debug during runtime w/o much changing
-          tHelpObjExt                          = Class
-
-             Function                          prepPersList( aForm: tForm): tPersistentSelectionList;
-             Procedure                         alignLeft( aForm: tForm);
-             Procedure                         distrVerEvn( aForm: tForm);
-
-          End;
+//Uses
+//          propedits
+//          ,
+//          Forms
+//          ;
+//
+//Type
+//          // helps to debug during runtime w/o much changing
+//          tHelpObjExt                          = Class
+//
+//             Function                          prepPersList( aForm: tForm): tPersistentSelectionList;
+//             Procedure                         alignLeft( aForm: tForm);
+//             Procedure                         distrVerEvn( aForm: tForm);
+//
+//          End;
 
 Procedure
           Register;
@@ -36,13 +36,13 @@ Uses
           Generics.Defaults,
           Generics.Collections,
           Controls,
-          //Forms,
+          Forms,
           Dialogs,
           menuintf,
           IDECommands,
           ToolBarIntf,
           FormEditingIntf,
-          //propedits,
+          propedits,
           componenteditors,
           lcltype;
 
@@ -164,7 +164,11 @@ Type
              Function                       compare1DBottom( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds; Out aOutCompRes: intEger): boolEan;
 
              Function                       compareOneDim  ( aDim: tCtrlDim; ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds): intEger;
+             {$If ( FPC_VERSION> 2) And ( FPC_RELEASE> 2) And ( FPC_PATCH> 0)}
+             Function                       compare( Const aLeft: tControlBounds; Const aRght: tControlBounds): intEger; Override;
+             {$Else}
              Function                       compare( ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds): intEger; Override;
+             {$EndIf}
 
              constructor                    create();
              Constructor                    create( aCtrlDims: tCtrlDimArray);
@@ -196,7 +200,11 @@ Type
 
           Public
 
+             {$If ( FPC_VERSION> 2) And ( FPC_RELEASE> 2) And ( FPC_PATCH> 0)}
+             Function                       compare( Const aLeft: intEger; Const aRght: intEger): intEger; Override;
+             {$Else}
              Function                       compare( ConstRef aLeft: intEger; ConstRef aRght: intEger): intEger; Override;
+             {$EndIf}
 
           End;
 
@@ -763,7 +771,11 @@ Begin
 End;
 
 Function
+          {$If ( FPC_VERSION> 2) And ( FPC_RELEASE> 2) And ( FPC_PATCH> 0)}
+          tControlBoundsComparer.compare( Const aLeft: tControlBounds; Const aRght: tControlBounds): intEger;
+          {$Else}
           tControlBoundsComparer.compare( ConstRef aLeft: tControlBounds; ConstRef aRght: tControlBounds): intEger;
+          {$EndIf}
 Var
           vIn1                              : intEger;
           vIn2                              : intEger;
@@ -820,7 +832,11 @@ End;
           { tIntegerComparer }
 
 Function
+          {$If ( FPC_VERSION> 2) And ( FPC_RELEASE> 2) And ( FPC_PATCH> 0)}
+          tIntegerComparer.compare( Const aLeft: intEger; Const aRght: intEger): intEger;
+          {$Else}
           tIntegerComparer.compare( ConstRef aLeft: intEger; ConstRef aRght: intEger): intEger;
+          {$EndIf}
 Begin
           Result:= 0;
           If ( aLeft< aRght)
@@ -2063,54 +2079,54 @@ Begin
           pslCurSelCtrls:= Nil;
 End;
 
-          { tHelpObjExt }
-
-Function
-          tHelpObjExt.prepPersList( aForm: tForm): tPersistentSelectionList;
-Var
-          vIn1                              : intEger;
-          vIn2                              : intEger;
-Begin
-          Result:= tPersistentSelectionList.create();
-          vIn2:= aForm.ControlCount;
-
-          For vIn1:= 0 To vIn2- 1
-              Do
-              Result.Add( aForm.Controls[ vIn1]);
-
-End;
-
-Procedure
-          tHelpObjExt.alignLeft( aForm: tForm);
-Var
-          vtHo1                             : tHelpObj;
-          vtPsL1                            : tPersistentSelectionList;
-Begin
-          vtHo1:= tHelpObj.create();
-
-          vtPsl1:= prepPersList( aForm);
-
-          vtHo1.PropHookSetSelection( vtPsl1);
-          vtHo1.alignLeft( Self);
-
-          freeAndNil( vtHo1);
-End;
-
-Procedure
-          tHelpObjExt.distrVerEvn( aForm: tForm);
-Var
-          vtHo1                             : tHelpObj;
-          vtPsL1                            : tPersistentSelectionList;
-Begin
-          vtHo1:= tHelpObj.create();
-
-          vtPsl1:= prepPersList( aForm);
-
-          vtHo1.PropHookSetSelection( vtPsl1);
-          vtHo1.distrVerEvn( Self);
-
-          freeAndNil( vtHo1);
-End;
+//          { tHelpObjExt }
+//
+//Function
+//          tHelpObjExt.prepPersList( aForm: tForm): tPersistentSelectionList;
+//Var
+//          vIn1                              : intEger;
+//          vIn2                              : intEger;
+//Begin
+//          Result:= tPersistentSelectionList.create();
+//          vIn2:= aForm.ControlCount;
+//
+//          For vIn1:= 0 To vIn2- 1
+//              Do
+//              Result.Add( aForm.Controls[ vIn1]);
+//
+//End;
+//
+//Procedure
+//          tHelpObjExt.alignLeft( aForm: tForm);
+//Var
+//          vtHo1                             : tHelpObj;
+//          vtPsL1                            : tPersistentSelectionList;
+//Begin
+//          vtHo1:= tHelpObj.create();
+//
+//          vtPsl1:= prepPersList( aForm);
+//
+//          vtHo1.PropHookSetSelection( vtPsl1);
+//          vtHo1.alignLeft( Self);
+//
+//          freeAndNil( vtHo1);
+//End;
+//
+//Procedure
+//          tHelpObjExt.distrVerEvn( aForm: tForm);
+//Var
+//          vtHo1                             : tHelpObj;
+//          vtPsL1                            : tPersistentSelectionList;
+//Begin
+//          vtHo1:= tHelpObj.create();
+//
+//          vtPsl1:= prepPersList( aForm);
+//
+//          vtHo1.PropHookSetSelection( vtPsl1);
+//          vtHo1.distrVerEvn( Self);
+//
+//          freeAndNil( vtHo1);
+//End;
 
 Initialization
 Begin
